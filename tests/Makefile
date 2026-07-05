@@ -1,13 +1,19 @@
 CXX = g++
 CXXFLAGS = -O2 -std=c++17 -Wall -g
 LDFLAGS = $(shell pkg-config --libs --cflags protobuf) -lpthread
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+RPATH_PARENT = -Wl,-rpath,@loader_path/..
+else
+RPATH_PARENT = -Wl,-rpath,'$$ORIGIN/..'
+endif
 
 .PHONY: all
 
 all: test_client_testserver
 
 test_client_testserver: test_client_testserver.cpp
-	$(CXX) $(CXXFLAGS) -I.. -o $@ $< -L.. -Wl,-rpath=.. -lutils $(LDFLAGS)
+	$(CXX) $(CXXFLAGS) -I.. -o $@ $< -L.. $(RPATH_PARENT) -lutils $(LDFLAGS)
 
 clean:
 	-rm -f test_client_testserver

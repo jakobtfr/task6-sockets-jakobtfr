@@ -3,10 +3,18 @@
 CC ?= cc
 CFLAGS ?= -g -Wall -O2
 CXX ?= c++
-CXXFLAGS ?= -g -Wall -O0
+CXXFLAGS ?= -g -Wall -O2 -std=c++17
 CARGO ?= cargo
 RUSTFLAGS ?= -g
 LDFLAGS = $(shell pkg-config --libs --cflags protobuf) -lpthread
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+SHARED_FLAGS = -shared -fPIC -Wl,-install_name,@rpath/libutils.so
+RPATH_SELF = -Wl,-rpath,@loader_path
+else
+SHARED_FLAGS = -shared -fPIC
+RPATH_SELF = -Wl,-rpath,'$$ORIGIN'
+endif
 
 .PHONY: all clean
 
@@ -17,17 +25,17 @@ clean:
 
 # --- C++ build steps ---
 
-# message.pb.cc: message.proto
-# 	protoc --cpp_out=. $^
+message.pb.cc: message.proto
+	protoc --cpp_out=. $^
 
-# libutils.so: utils.cpp message.pb.cc
-# 	$(CXX) $(CXXFLAGS) -shared -fPIC -o $@ utils.cpp message.pb.cc $(LDFLAGS)
+libutils.so: utils.cpp message.pb.cc
+	$(CXX) $(CXXFLAGS) $(SHARED_FLAGS) -o $@ utils.cpp message.pb.cc $(LDFLAGS)
 
-# server: server.cpp libutils.so message.pb.cc
-# 	$(CXX) $(CXXFLAGS) -o $@ server.cpp message.pb.cc -L. -Wl,-rpath=. -lutils $(LDFLAGS)
+server: server.cpp libutils.so
+	$(CXX) $(CXXFLAGS) -o $@ server.cpp -L. $(RPATH_SELF) -lutils -lpthread
 
-# client: client.cpp libutils.so message.pb.cc
-# 	$(CXX) $(CXXFLAGS) -o $@ client.cpp message.pb.cc -L. -Wl,-rpath=. -lutils $(LDFLAGS)
+client: client.cpp libutils.so
+	$(CXX) $(CXXFLAGS) -o $@ client.cpp -L. $(RPATH_SELF) -lutils -lpthread
 
 # --- Rust build steps ---
 
