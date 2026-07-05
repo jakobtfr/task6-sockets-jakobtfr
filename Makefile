@@ -32,7 +32,7 @@ libutils.so: utils.cpp message.pb.cc
 	$(CXX) $(CXXFLAGS) $(SHARED_FLAGS) -o $@ utils.cpp message.pb.cc $(LDFLAGS)
 
 server: server.cpp libutils.so
-	$(CXX) $(CXXFLAGS) -o $@ server.cpp -L. $(RPATH_SELF) -lutils -lpthread
+	$(CXX) $(CXXFLAGS) -o $@ server.cpp -L. $(RPATH_SELF) -lutils $(LDFLAGS)
 
 client: client.cpp libutils.so
 	$(CXX) $(CXXFLAGS) -o $@ client.cpp -L. $(RPATH_SELF) -lutils -lpthread

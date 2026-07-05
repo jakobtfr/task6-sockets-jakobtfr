@@ -71,7 +71,7 @@ int main(int args, char *argv[]) {
     }
 
     std::vector<std::thread> threads;
-    std::vector<bool> results(static_cast<size_t>(numClients), false);
+    std::vector<unsigned char> results(static_cast<size_t>(numClients), false);
     threads.reserve(static_cast<size_t>(numClients));
 
     for (int i = 0; i < numClients; ++i) {
