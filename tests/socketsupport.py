@@ -49,40 +49,6 @@ def run_client(num_threads: int, port: int, num_messages: int, add: int, sub: in
         return sorted(numbers)
 
 
-def get_total_thread_count(pid: int) -> int:
-    proc_status = f"/proc/{pid}/status"
-    if os.path.exists(proc_status):
-        with open(proc_status) as status:
-            for line in status:
-                if line.startswith("Threads:"):
-                    return int(line.split()[1])
-
-    for keyword in ("thcount", "nlwp"):
-        result = subprocess.run(
-            ["ps", "-o", f"{keyword}=", str(pid)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-        )
-        if result.returncode == 0:
-            output = result.stdout.split()
-            if output:
-                return int(output[-1])
-
-    result = subprocess.run(
-        ["ps", "-M", str(pid)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        text=True,
-    )
-    if result.returncode == 0:
-        lines = [line for line in result.stdout.splitlines() if line.strip()]
-        if len(lines) > 1:
-            return len(lines) - 1
-
-    raise RuntimeError("could not determine server thread count")
-
-
 def test_server(
     num_server_threads: int,
     num_client_threads: int,
@@ -107,7 +73,15 @@ def test_server(
             # Wait for server init
             time.sleep(1.0)
 
-            thread_count = get_total_thread_count(proc.pid) - 1
+            pid_ = proc.pid
+            test_proc = subprocess.Popen(['ps' ,'-o', 'thcount', str(pid_)],
+                           stdout=subprocess.PIPE,
+                           text=True,)
+            shell_out, _ = test_proc.communicate()
+            test_proc.terminate()
+
+            output = shell_out.splitlines()
+            thread_count = int(output[-1].strip()) - 1
             client_numbers = []
 
             for _ in range(num_client_instances):
@@ -228,3 +202,4 @@ def test_server_performance(
     except Exception as e:
         warn(f"Failed due to exception: {e}")
         sys.exit(1)
+
