@@ -1,11 +1,20 @@
-name: GitHub Classroom Workflow
+name: Tests
 
-on: [push]
+on: [push, pull_request, workflow_dispatch]
+
+permissions:
+  contents: read
 
 jobs:
   build:
-    name: Autograding
-    runs-on: self-hosted
+    name: Assignment tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v2
-      - uses: education/autograding@v1
+      - uses: actions/checkout@v6
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential pkg-config protobuf-compiler libprotobuf-dev
+      - name: Build and run all assignment tests
+        run: make check
